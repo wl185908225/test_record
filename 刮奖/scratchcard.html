@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+		<meta http-equiv="Expires" content="0">
+		<meta http-equiv="Pragma" content="no-cache">
+		<meta http-equiv="Cache-control" content="no-cache">
+		<meta http-equiv="Cache" content="no-cache">
+		<title></title>
+		<style>
+			body {
+				max-width: 375px;
+				overflow: hidden;
+			}
+			.container {
+				width: 300px;
+				margin: 0 auto;
+			}
+			#result {
+				width: 240px;
+				height: 65px;
+				background-size: 100% 100%;
+				background-image: url(https://www.crotohome.com/images/index/logo_icon.png);
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div id="result">
+				<canvas id="mask" width="240" height="65"></canvas>
+			</div>
+		</div>
+		<script>
+			var canvas = document.getElementById('mask');
+			var context = canvas.getContext('2d');
+			context.fillStyle = '#d1d1d1';
+			context.fillRect(0, 0, 240, 65);
+			context.globalCompositeOperation = 'destination-out';
+			
+			var showFlag = true;
+			
+			// 手机或者鼠标接触换个小圆圈
+			function drawArcByPoint(evt) {
+				//console.log(evt);
+				//return;
+				var x = evt.pageX, y = evt.pageY;
+				context.beginPath();
+				context.arc(x - canvas.offsetLeft, y - canvas.offsetTop, 10, 0, 2 * Math.PI);
+				context.closePath();
+				//context.fillStyle = '#ff0000';
+				context.fill();
+				checkComplete();
+			}
+			
+			
+			function checkComplete() {
+				var imgData = context.getImageData(0, 0, 240, 65);
+				var pxData = imgData.data;  // 获取字节数据
+				var len = pxData.length; //获取字节长度
+				var count = 0; //记录透明点的个数
+				
+				//主要的思想是一个像素由四个数据组成，每个数据分别是rgba()所以第四个数据α表示alpha透明度
+				for(var i = 0; i < len; i += 4) {
+					var alpha = pxData[i + 3]; //获取每个像素的透明度
+					if(alpha < 10) {
+						//透明度小于10
+						count++;
+					}
+				}
+				var percent = count / (len / 4); //计算百分比
+				// 如果百分比大于0.8则表示成功
+				if(percent >= 0.8 && showFlag) {
+					showFlag = false;
+					showResult();
+				}
+			}
+			
+			function showResult() {
+				alert('刮奖结束');
+			}
+			
+			//鼠标按下 增加mousemove的事件监听
+			canvas.addEventListener('mousedown', drawArcMouseHandle);
+			canvas.addEventListener('mouseup', function(event) {
+				//鼠标抬起后，把mousemove的事件监听撤销
+				this.removeEventListener('mousemove', mousemoveHandle);
+			});
+			
+			//根据鼠标的move画圆
+			function drawArcMouseHandle(event) {
+				event.preventDefault();
+				event.target.addEventListener("mousemove", mousemoveHandle);
+			}
+			
+			//为了能够移除movesemove的事件需要单独处理一下
+			function mousemoveHandle(event) {
+				event.preventDefault();
+				drawArcByPoint(event);
+			}
+			
+			//手机监听 touchmove
+			canvas.addEventListener('touchmove', drawArcTouchHandle);
+			//根据触摸点画圆 
+			function drawArcTouchHandle(event) {
+				event.preventDefault();
+				var touch = event.touches[0];
+				drawArcByPoint(touch);
+			}
+		</script>
+	</body>
+</html>
